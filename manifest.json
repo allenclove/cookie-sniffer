@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Cookie Sniffer",
+  "version": "1.0",
+  "permissions": ["webRequest", "storage", "activeTab", "scripting", "cookies", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "description": "一键获取指定请求的 Cookie"
+} 

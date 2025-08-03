@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Cookie Sniffer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="header">
+      <h1>🍪 Cookie 提取器</h1>
+    </div>
+    
+    <div class="content">
+             <div class="section">
+         <label for="cookieText">最新捕获的 Cookie:</label>
+         <textarea id="cookieText" readonly placeholder="等待捕获 Cookie..."></textarea>
+         <div class="button-group">
+           <button id="copyBtn" class="primary-btn">📋 复制 Cookie</button>
+           <button id="clearBtn" class="secondary-btn">🗑️ 清空</button>
+         </div>
+       </div>
+      
+      
+      
+             <div class="section">
+         <label>自定义匹配关键词:</label>
+         <div class="keyword-input-container">
+           <input type="text" id="keywordInput" placeholder="输入关键词，如: /api/, login, auth" />
+           <button id="addKeywordBtn" class="add-btn">+</button>
+         </div>
+         <div class="keywords" id="keywordsList">
+           <span class="keyword">your-api-keyword</span>
+           <span class="keyword">/api/</span>
+           <span class="keyword">login</span>
+           <span class="keyword">auth</span>
+           <span class="keyword">session</span>
+         </div>
+       </div>
+       
+       <div class="section">
+         <label>历史记录:</label>
+         <button id="clearHistoryBtn" class="secondary-btn">清空</button>
+         <div id="historyList" class="history-list"></div>
+       </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html> 

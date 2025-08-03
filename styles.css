@@ -1,0 +1,275 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 420px;
+  background: #f8f9fa;
+  color: #333;
+}
+
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px;
+  text-align: center;
+  border-radius: 0 0 10px 10px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.content {
+  padding: 15px;
+}
+
+.section {
+  margin-bottom: 20px;
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.section label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+textarea {
+  width: 100%;
+  height: 80px;
+  margin-bottom: 10px;
+  resize: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.primary-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.primary-btn:hover {
+  background: #0056b3;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.button-group .primary-btn,
+.button-group .secondary-btn {
+  flex: 1;
+}
+
+.secondary-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.secondary-btn:hover {
+  background: #545b62;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.history-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.history-item {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #fafafa;
+}
+
+.history-item .history-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.domain {
+  font-weight: 600;
+  color: #007bff;
+  font-size: 12px;
+}
+
+.time {
+  font-size: 11px;
+  color: #666;
+}
+
+.history-url {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 5px;
+  word-break: break-all;
+  cursor: pointer;
+  position: relative;
+}
+
+.history-url:hover {
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.history-url.full-url {
+  white-space: pre-wrap;
+  max-height: none;
+  overflow: visible;
+}
+
+.history-cookie {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #333;
+  margin-bottom: 8px;
+  word-break: break-all;
+  background: #f8f9fa;
+  padding: 4px;
+  border-radius: 2px;
+}
+
+.copy-history-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.copy-history-btn:hover {
+  background: #218838;
+}
+
+.empty-history {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+}
+
+.keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.keyword {
+  background: #e9ecef;
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  margin: 2px;
+  position: relative;
+}
+
+.remove-keyword {
+  margin-left: 6px;
+  cursor: pointer;
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.remove-keyword:hover {
+  color: #c82333;
+}
+
+.keyword-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.keyword-input-container input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  box-sizing: border-box;
+  min-width: 0; /* 防止flex项目溢出 */
+}
+
+.add-btn {
+  padding: 8px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.add-btn:hover {
+  background: #218838;
+}
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+} 

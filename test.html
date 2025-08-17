@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Sniffer 测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .success {
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+        }
+        .regex-example {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .url-display {
+            background: #e9ecef;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Cookie Sniffer 测试页面</h1>
+        
+        <div class="info">
+            <h3>使用说明</h3>
+            <p>这个页面用于测试 Cookie Sniffer 扩展的功能。请确保已经安装并启用了扩展。</p>
+            <p>点击下面的按钮来模拟不同类型的请求，然后查看扩展是否能够捕获到相应的 Cookie。</p>
+        </div>
+
+        <div class="test-section">
+            <h3>1. 关键词匹配测试</h3>
+            <p>这些请求包含扩展默认的关键词，应该能被捕获：</p>
+            <button onclick="testApiRequest()">测试 API 请求 (/api/)</button>
+            <button onclick="testLoginRequest()">测试登录请求 (login)</button>
+            <button onclick="testAuthRequest()">测试认证请求 (auth)</button>
+            <button onclick="testSessionRequest()">测试会话请求 (session)</button>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 正则表达式测试</h3>
+            <p>在扩展中添加以下正则规则来测试这些请求：</p>
+            
+            <div class="regex-example">
+                <strong>规则1:</strong> 规则名称: user-id, 匹配值: /user/\d+, 匹配类型: 正则
+            </div>
+            <button onclick="testRegexUser1()">测试 /user/12345</button>
+            <button onclick="testRegexUser2()">测试 /user/67890</button>
+            
+            <div class="regex-example">
+                <strong>规则2:</strong> 规则名称: api-version, 匹配值: /api/v\d+/, 匹配类型: 正则
+            </div>
+            <button onclick="testRegexApi1()">测试 /api/v1/users</button>
+            <button onclick="testRegexApi2()">测试 /api/v2/posts</button>
+            
+            <div class="regex-example">
+                <strong>规则3:</strong> 规则名称: auth-pages, 匹配值: /(login|logout|register), 匹配类型: 正则
+            </div>
+            <button onclick="testRegexAuth1()">测试 /login</button>
+            <button onclick="testRegexAuth2()">测试 /logout</button>
+            <button onclick="testRegexAuth3()">测试 /register</button>
+            
+            <div class="regex-example">
+                <strong>规则4:</strong> 规则名称: bilibili-data, 匹配值: https://data\.bilibili\.com/.*, 匹配类型: 正则
+            </div>
+            <button onclick="testRegexBilibili()">测试 bilibili 数据请求</button>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 全匹配测试</h3>
+            <p>在扩展中添加全匹配规则来测试这些请求：</p>
+            <div class="regex-example">
+                <strong>规则:</strong> 规则名称: exact-api, 匹配值: https://api.example.com/v1/users, 匹配类型: 全匹配
+            </div>
+            <button onclick="testExactMatch1()">测试全匹配 1</button>
+            <button onclick="testExactMatch2()">测试全匹配 2</button>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 设置测试 Cookie</h3>
+            <p>手动设置一些 Cookie 来测试捕获功能：</p>
+            <button onclick="setTestCookies()">设置测试 Cookie</button>
+            <button onclick="clearTestCookies()">清除测试 Cookie</button>
+        </div>
+
+        <div class="success">
+            <h3>✅ 测试成功示例</h3>
+            <p>如果你看到类似这样的匹配信息，说明正则表达式工作正常：</p>
+            <div class="url-display">
+                来源: https://data.bilibili.com/v2/log/web?content_type=pbrequest&logid=021434&disable_compression=true<br>
+                匹配规则: bilibili-data [正则]
+            </div>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ 注意事项</h3>
+            <ul>
+                <li>确保 Cookie Sniffer 扩展已安装并启用</li>
+                <li>某些请求可能需要实际的网络连接才能触发 Cookie 设置</li>
+                <li>查看浏览器控制台以获取调试信息</li>
+                <li>点击扩展图标查看捕获的 Cookie</li>
+                <li>正则表达式区分大小写，使用 <code>i</code> 标志进行不区分大小写匹配</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>📋 测试步骤</h3>
+            <ol>
+                <li>打开扩展弹窗，查看当前的匹配规则</li>
+                <li>添加新的匹配规则（参考上面的正则表达式示例）</li>
+                <li>点击上面的测试按钮</li>
+                <li>再次打开扩展弹窗，查看是否捕获到 Cookie</li>
+                <li>检查历史记录中的匹配信息</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <h3>🔧 调试技巧</h3>
+            <ul>
+                <li>打开浏览器开发者工具 (F12)</li>
+                <li>查看 Console 标签页的调试信息</li>
+                <li>在 Network 标签页查看实际的网络请求</li>
+                <li>使用正则表达式在线测试工具验证语法</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 模拟 API 请求
+        function testApiRequest() {
+            console.log('测试 API 请求');
+            const url = '/api/test';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 模拟登录请求
+        function testLoginRequest() {
+            console.log('测试登录请求');
+            const url = '/login';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'POST',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 模拟认证请求
+        function testAuthRequest() {
+            console.log('测试认证请求');
+            const url = '/auth/verify';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 模拟会话请求
+        function testSessionRequest() {
+            console.log('测试会话请求');
+            const url = '/session/check';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 模拟正则匹配请求 - 用户ID
+        function testRegexUser1() {
+            console.log('测试正则请求 - 用户ID 1');
+            const url = '/user/12345';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        function testRegexUser2() {
+            console.log('测试正则请求 - 用户ID 2');
+            const url = '/user/67890';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 模拟正则匹配请求 - API版本
+        function testRegexApi1() {
+            console.log('测试正则请求 - API版本 1');
+            const url = '/api/v1/users';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        function testRegexApi2() {
+            console.log('测试正则请求 - API版本 2');
+            const url = '/api/v2/posts';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 模拟正则匹配请求 - 认证页面
+        function testRegexAuth1() {
+            console.log('测试正则请求 - 认证页面 1');
+            const url = '/login';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'POST',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        function testRegexAuth2() {
+            console.log('测试正则请求 - 认证页面 2');
+            const url = '/logout';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'POST',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        function testRegexAuth3() {
+            console.log('测试正则请求 - 认证页面 3');
+            const url = '/register';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'POST',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 模拟正则匹配请求 - bilibili数据
+        function testRegexBilibili() {
+            console.log('测试正则请求 - bilibili数据');
+            const url = 'https://data.bilibili.com/v2/log/web?content_type=pbrequest&logid=021434&disable_compression=true';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 模拟全匹配请求
+        function testExactMatch1() {
+            console.log('测试全匹配 1');
+            const url = 'https://api.example.com/v1/users';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'GET',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        function testExactMatch2() {
+            console.log('测试全匹配 2');
+            const url = 'https://test.com/login';
+            console.log('请求URL:', url);
+            fetch(url, {
+                method: 'POST',
+                credentials: 'include'
+            }).catch(e => console.log('模拟请求完成'));
+        }
+
+        // 设置测试 Cookie
+        function setTestCookies() {
+            document.cookie = "test_cookie=test_value; path=/";
+            document.cookie = "session_id=abc123; path=/";
+            document.cookie = "user_token=xyz789; path=/";
+            document.cookie = "buvid3=test_buvid; path=/";
+            document.cookie = "b_nut=test_nut; path=/";
+            alert('测试 Cookie 已设置！');
+        }
+
+        // 清除测试 Cookie
+        function clearTestCookies() {
+            document.cookie = "test_cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            document.cookie = "session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            document.cookie = "user_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            document.cookie = "buvid3=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            document.cookie = "b_nut=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            alert('测试 Cookie 已清除！');
+        }
+
+        // 页面加载时显示当前 Cookie
+        window.addEventListener('load', () => {
+            console.log('当前页面 Cookie:', document.cookie);
+            console.log('测试页面已加载，可以开始测试 Cookie Sniffer 扩展');
+        });
+    </script>
+</body>
+</html>

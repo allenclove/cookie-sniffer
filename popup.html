@@ -11,37 +11,43 @@
     </div>
     
     <div class="content">
-             <div class="section">
-         <label for="cookieText">最新捕获的 Cookie:</label>
-         <textarea id="cookieText" readonly placeholder="等待捕获 Cookie..."></textarea>
-         <div class="button-group">
-           <button id="copyBtn" class="primary-btn">📋 复制 Cookie</button>
-           <button id="clearBtn" class="secondary-btn">🗑️ 清空</button>
-         </div>
-       </div>
+      <div class="section">
+        <label for="cookieText">最新捕获的 Cookie:</label>
+        <div class="cookie-info">
+          <div class="cookie-source" id="cookieSource">等待捕获 Cookie...</div>
+          <textarea id="cookieText" readonly placeholder="等待捕获 Cookie..."></textarea>
+        </div>
+        <div class="button-group">
+          <button id="copyBtn" class="primary-btn">📋 复制 Cookie</button>
+          <button id="clearBtn" class="secondary-btn">🗑️ 清空</button>
+        </div>
+      </div>
       
+      <div class="section">
+        <label>自定义匹配规则:</label>
+        <div class="rule-input-container">
+          <div class="rule-row">
+            <input type="text" id="ruleKeyInput" placeholder="规则名称" title="给规则起一个便于识别的名称，如: baidu" />
+            <input type="text" id="ruleValueInput" placeholder="匹配值" title="要匹配的URL内容，如: https://baidu.com 或 /api/" />
+            <select id="ruleTypeSelect" title="选择匹配类型">
+              <option value="关键词">关键词</option>
+              <option value="全匹配">全匹配</option>
+              <option value="正则">正则</option>
+            </select>
+            <input type="text" id="ruleUrlInput" placeholder="页面URL" title="可选，用于一键打开相关页面" />
+            <button id="addRuleBtn" class="add-btn" title="添加规则">+</button>
+          </div>
+        </div>
+        <div class="rules" id="rulesList">
+          <!-- 规则列表将在这里动态生成 -->
+        </div>
+      </div>
       
-      
-             <div class="section">
-         <label>自定义匹配关键词:</label>
-         <div class="keyword-input-container">
-           <input type="text" id="keywordInput" placeholder="输入关键词，如: /api/, login, auth" />
-           <button id="addKeywordBtn" class="add-btn">+</button>
-         </div>
-         <div class="keywords" id="keywordsList">
-           <span class="keyword">your-api-keyword</span>
-           <span class="keyword">/api/</span>
-           <span class="keyword">login</span>
-           <span class="keyword">auth</span>
-           <span class="keyword">session</span>
-         </div>
-       </div>
-       
-       <div class="section">
-         <label>历史记录:</label>
-         <button id="clearHistoryBtn" class="secondary-btn">清空</button>
-         <div id="historyList" class="history-list"></div>
-       </div>
+      <div class="section">
+        <label>历史记录:</label>
+        <button id="clearHistoryBtn" class="secondary-btn">清空</button>
+        <div id="historyList" class="history-list"></div>
+      </div>
     </div>
 
     <script src="popup.js"></script>

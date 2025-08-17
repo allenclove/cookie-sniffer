@@ -1,32 +1,84 @@
 let latestCookie = "";
 let cookieHistory = [];
 
-// 默认关键词数组
-const defaultKeywords = [
-  "your-api-keyword",  // 默认关键词
-  "/api/",             // API请求
-  "login",             // 登录相关
-  "auth",              // 认证相关
-  "session"            // 会话相关
+// 默认匹配规则数组 - 使用新的key-value结构
+const defaultMatchRules = [
+  {
+    key: "api-keyword",
+    value: "your-api-keyword",
+    type: "关键词",
+    url: ""
+  },
+  {
+    key: "api-path",
+    value: "/api/",
+    type: "关键词",
+    url: ""
+  },
+  {
+    key: "login",
+    value: "login",
+    type: "关键词",
+    url: ""
+  },
+  {
+    key: "auth",
+    value: "auth",
+    type: "关键词",
+    url: ""
+  },
+  {
+    key: "session",
+    value: "session",
+    type: "关键词",
+    url: ""
+  }
 ];
 
-// 当前使用的关键词数组
-let targetUrlKeywords = [...defaultKeywords];
+// 当前使用的匹配规则数组
+let targetMatchRules = [...defaultMatchRules];
 
 // 调试日志
 function log(message) {
   console.log(`[Cookie Sniffer] ${message}`);
 }
 
-// 检查URL是否匹配任何关键词
+// 检查URL是否匹配任何规则
 function isTargetUrl(url) {
-  const matched = targetUrlKeywords.some(keyword => 
-    url.toLowerCase().includes(keyword.toLowerCase())
-  );
-  if (matched) {
-    log(`URL匹配成功: ${url}`);
+  for (const rule of targetMatchRules) {
+    let matched = false;
+    let matchType = "";
+    
+    switch (rule.type) {
+      case "正则":
+        try {
+          const regex = new RegExp(rule.value, 'i');
+          matched = regex.test(url);
+          matchType = "正则";
+        } catch (e) {
+          log(`正则表达式错误: ${rule.value} - ${e.message}`);
+          continue;
+        }
+        break;
+        
+      case "全匹配":
+        matched = url.toLowerCase() === rule.value.toLowerCase();
+        matchType = "全匹配";
+        break;
+        
+      case "关键词":
+        matched = url.toLowerCase().includes(rule.value.toLowerCase());
+        matchType = "关键词";
+        break;
+    }
+    
+    if (matched) {
+      log(`URL匹配成功 [${matchType}]: ${url} (匹配规则: ${rule.key})`);
+      return { matched: true, rule: rule, matchType: matchType };
+    }
   }
-  return matched;
+  
+  return { matched: false, rule: null, matchType: "" };
 }
 
 // 获取域名
@@ -39,26 +91,26 @@ function getDomain(url) {
   }
 }
 
-// 获取Cookie的多种方式
-function getCookiesForUrl(url) {
+// 获取Cookie的多种方式 - 优先通过URL获取
+function getCookiesForUrl(url, matchInfo) {
   const domain = getDomain(url);
-  log(`尝试获取域名 ${domain} 的Cookie`);
+  log(`尝试获取URL ${url} 的Cookie`);
   
-  // 方法1: 通过域名获取
-  chrome.cookies.getAll({ domain: domain }, function (cookies) {
-    if (cookies && cookies.length > 0) {
-      log(`通过域名获取到 ${cookies.length} 个Cookie`);
-      processCookies(cookies, url, domain);
+  // 方法1: 优先通过URL获取
+  chrome.cookies.getAll({ url: url }, function (urlCookies) {
+    if (urlCookies && urlCookies.length > 0) {
+      log(`通过URL获取到 ${urlCookies.length} 个Cookie`);
+      processCookies(urlCookies, url, domain, matchInfo);
     } else {
-      log(`域名 ${domain} 没有找到Cookie，尝试其他方法`);
+      log(`URL ${url} 没有找到Cookie，尝试通过域名获取`);
       
-      // 方法2: 通过URL获取
-      chrome.cookies.getAll({ url: url }, function (urlCookies) {
-        if (urlCookies && urlCookies.length > 0) {
-          log(`通过URL获取到 ${urlCookies.length} 个Cookie`);
-          processCookies(urlCookies, url, domain);
+      // 方法2: 通过域名获取
+      chrome.cookies.getAll({ domain: domain }, function (domainCookies) {
+        if (domainCookies && domainCookies.length > 0) {
+          log(`通过域名获取到 ${domainCookies.length} 个Cookie`);
+          processCookies(domainCookies, url, domain, matchInfo);
         } else {
-          log(`URL ${url} 也没有找到Cookie`);
+          log(`域名 ${domain} 也没有找到Cookie`);
         }
       });
     }
@@ -66,13 +118,13 @@ function getCookiesForUrl(url) {
 }
 
 // 处理Cookie
-function processCookies(cookies, url, domain) {
+function processCookies(cookies, url, domain, matchInfo) {
   const cookieStr = cookies.map(c => `${c.name}=${c.value}`).join("; ");
-  processCookiesFromString(cookieStr, url, domain);
+  processCookiesFromString(cookieStr, url, domain, matchInfo);
 }
 
 // 处理Cookie字符串
-function processCookiesFromString(cookieStr, url, domain) {
+function processCookiesFromString(cookieStr, url, domain, matchInfo) {
   if (!cookieStr || cookieStr.trim() === '') {
     log('Cookie字符串为空');
     return;
@@ -81,12 +133,15 @@ function processCookiesFromString(cookieStr, url, domain) {
   latestCookie = cookieStr;
   log(`处理Cookie: ${cookieStr.substring(0, 100)}...`);
   
-  // 保存到历史记录
+  // 保存到历史记录 - 包含匹配信息
   const cookieInfo = {
     url: url,
     domain: domain,
     cookie: cookieStr,
-    timestamp: new Date().toLocaleString()
+    timestamp: new Date().toLocaleString(),
+    matchKey: matchInfo ? matchInfo.rule.key : "",
+    matchType: matchInfo ? matchInfo.matchType : "",
+    matchValue: matchInfo ? matchInfo.rule.value : ""
   };
   
   cookieHistory.unshift(cookieInfo);
@@ -109,9 +164,10 @@ chrome.webRequest.onCompleted.addListener(
   function (details) {
     log(`检测到请求: ${details.url}`);
     
-    if (isTargetUrl(details.url)) {
+    const matchResult = isTargetUrl(details.url);
+    if (matchResult.matched) {
       log(`开始获取Cookie: ${details.url}`);
-      getCookiesForUrl(details.url);
+      getCookiesForUrl(details.url, matchResult);
     }
   },
   { urls: ["<all_urls>"] },
@@ -130,23 +186,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     cookieHistory = [];
     chrome.storage.local.set({ cookieHistory: [] });
     sendResponse({ success: true });
-  } else if (message.type === "getKeywords") {
-    sendResponse({ keywords: targetUrlKeywords });
-  } else if (message.type === "addKeyword") {
-    const keyword = message.keyword.trim();
-    if (keyword && !targetUrlKeywords.includes(keyword)) {
-      targetUrlKeywords.push(keyword);
-      chrome.storage.local.set({ keywords: targetUrlKeywords });
+  } else if (message.type === "getMatchRules") {
+    sendResponse({ rules: targetMatchRules });
+  } else if (message.type === "addMatchRule") {
+    const rule = message.rule;
+    if (rule.key && rule.value && rule.type && !targetMatchRules.some(r => r.key === rule.key)) {
+      targetMatchRules.push(rule);
+      chrome.storage.local.set({ matchRules: targetMatchRules });
       sendResponse({ success: true });
     } else {
       sendResponse({ success: false });
     }
-  } else if (message.type === "removeKeyword") {
-    const keyword = message.keyword;
-    const index = targetUrlKeywords.indexOf(keyword);
+  } else if (message.type === "updateMatchRule") {
+    const oldKey = message.oldKey;
+    const newRule = message.newRule;
+    const index = targetMatchRules.findIndex(rule => rule.key === oldKey);
+    
+    if (index > -1 && newRule.key && newRule.value && newRule.type) {
+      // 检查新key是否与其他规则冲突（除了当前规则）
+      const keyConflict = targetMatchRules.some((rule, i) => 
+        i !== index && rule.key === newRule.key
+      );
+      
+      if (keyConflict) {
+        sendResponse({ success: false, error: "规则名称已存在" });
+      } else {
+        targetMatchRules[index] = newRule;
+        chrome.storage.local.set({ matchRules: targetMatchRules });
+        sendResponse({ success: true });
+      }
+    } else {
+      sendResponse({ success: false, error: "规则不存在或数据无效" });
+    }
+  } else if (message.type === "removeMatchRule") {
+    const key = message.key;
+    const index = targetMatchRules.findIndex(rule => rule.key === key);
     if (index > -1) {
-      targetUrlKeywords.splice(index, 1);
-      chrome.storage.local.set({ keywords: targetUrlKeywords });
+      targetMatchRules.splice(index, 1);
+      chrome.storage.local.set({ matchRules: targetMatchRules });
       sendResponse({ success: true });
     } else {
       sendResponse({ success: false });
@@ -161,22 +238,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
   } else if (message.type === "cookiesChanged" || message.type === "pageLoaded") {
     // 处理来自content script的Cookie变化消息
-    if (message.cookies && isTargetUrl(message.url)) {
-      log(`检测到Cookie变化: ${message.url}`);
-      processCookiesFromString(message.cookies, message.url, message.domain);
+    if (message.cookies) {
+      const matchResult = isTargetUrl(message.url);
+      if (matchResult.matched) {
+        log(`检测到Cookie变化: ${message.url}`);
+        processCookiesFromString(message.cookies, message.url, message.domain, matchResult);
+      }
     }
   }
 });
 
 // 启动时从存储中恢复数据
-chrome.storage.local.get(['latestCookie', 'cookieHistory', 'keywords'], function(result) {
+chrome.storage.local.get(['latestCookie', 'cookieHistory', 'matchRules'], function(result) {
   if (result.latestCookie) {
     latestCookie = result.latestCookie;
   }
   if (result.cookieHistory) {
     cookieHistory = result.cookieHistory;
   }
-  if (result.keywords) {
-    targetUrlKeywords = result.keywords;
+  if (result.matchRules) {
+    targetMatchRules = result.matchRules;
   }
 }); 

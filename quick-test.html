@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Sniffer 快速测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .regex-test {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .result {
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        input, select {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Cookie Sniffer 快速测试</h1>
+        
+        <div class="test-section">
+            <h3>正则表达式测试</h3>
+            <p>测试正则表达式是否正常工作：</p>
+            
+            <div class="regex-test">
+                <strong>测试1: 用户ID匹配</strong><br>
+                正则: <code>/user/\d+</code><br>
+                <button onclick="testRegex('/user/\\d+', '/user/12345')">测试 /user/12345</button>
+                <button onclick="testRegex('/user/\\d+', '/user/67890')">测试 /user/67890</button>
+                <button onclick="testRegex('/user/\\d+', '/user/abc')">测试 /user/abc (应该失败)</button>
+            </div>
+            
+            <div class="regex-test">
+                <strong>测试2: API版本匹配</strong><br>
+                正则: <code>/api/v\d+/</code><br>
+                <button onclick="testRegex('/api/v\\d+/', '/api/v1/users')">测试 /api/v1/users</button>
+                <button onclick="testRegex('/api/v\\d+/', '/api/v2/posts')">测试 /api/v2/posts</button>
+                <button onclick="testRegex('/api/v\\d+/', '/api/users')">测试 /api/users (应该失败)</button>
+            </div>
+            
+            <div class="regex-test">
+                <strong>测试3: 认证页面匹配</strong><br>
+                正则: <code>/(login|logout|register)</code><br>
+                <button onclick="testRegex('/(login|logout|register)', '/login')">测试 /login</button>
+                <button onclick="testRegex('/(login|logout|register)', '/logout')">测试 /logout</button>
+                <button onclick="testRegex('/(login|logout|register)', '/register')">测试 /register</button>
+                <button onclick="testRegex('/(login|logout|register)', '/profile')">测试 /profile (应该失败)</button>
+            </div>
+            
+            <div class="regex-test">
+                <strong>测试4: bilibili数据匹配</strong><br>
+                正则: <code>https://data\.bilibili\.com/.*</code><br>
+                <button onclick="testRegex('https://data\\.bilibili\\.com/.*', 'https://data.bilibili.com/v2/log/web')">测试 bilibili数据</button>
+                <button onclick="testRegex('https://data\\.bilibili\\.com/.*', 'https://api.bilibili.com/user')">测试 bilibili API (应该失败)</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>自定义正则测试</h3>
+            <p>输入自定义正则表达式和URL进行测试：</p>
+            <input type="text" id="customRegex" placeholder="输入正则表达式" style="width: 300px;">
+            <input type="text" id="customUrl" placeholder="输入测试URL" style="width: 300px;">
+            <button onclick="testCustomRegex()">测试</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>扩展功能测试</h3>
+            <p>测试扩展是否能捕获到请求：</p>
+            <button onclick="testExtension()">发送测试请求</button>
+            <div id="extensionResult"></div>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function testRegex(regexPattern, testUrl) {
+            try {
+                const regex = new RegExp(regexPattern, 'i');
+                const matched = regex.test(testUrl);
+                const result = matched ? '✅ 匹配成功' : '❌ 匹配失败';
+                const className = matched ? 'success' : 'error';
+                
+                addResult(`${result}: 正则 "${regexPattern}" 测试URL "${testUrl}"`, className);
+                
+                // 同时发送请求测试扩展
+                if (matched) {
+                    fetch(testUrl, {
+                        method: 'GET',
+                        credentials: 'include'
+                    }).catch(e => console.log('请求发送完成'));
+                }
+            } catch (e) {
+                addResult(`❌ 正则表达式错误: ${e.message}`, 'error');
+            }
+        }
+        
+        function testCustomRegex() {
+            const regex = document.getElementById('customRegex').value;
+            const url = document.getElementById('customUrl').value;
+            
+            if (!regex || !url) {
+                addResult('❌ 请输入正则表达式和测试URL', 'error');
+                return;
+            }
+            
+            testRegex(regex, url);
+        }
+        
+        function testExtension() {
+            const testUrls = [
+                '/user/12345',
+                '/api/v1/users',
+                '/login',
+                'https://data.bilibili.com/v2/log/web'
+            ];
+            
+            addResult('🔄 发送测试请求...', 'info');
+            
+            testUrls.forEach((url, index) => {
+                setTimeout(() => {
+                    fetch(url, {
+                        method: 'GET',
+                        credentials: 'include'
+                    }).catch(e => console.log('请求完成'));
+                    addResult(`📤 发送请求: ${url}`, 'info');
+                }, index * 500);
+            });
+            
+            setTimeout(() => {
+                addResult('✅ 所有测试请求已发送，请检查扩展弹窗', 'success');
+            }, testUrls.length * 500 + 1000);
+        }
+        
+        function addResult(message, className) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${className}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        // 页面加载时显示说明
+        window.addEventListener('load', () => {
+            addResult('🚀 快速测试页面已加载', 'info');
+            addResult('💡 点击上面的按钮测试正则表达式功能', 'info');
+            addResult('🔍 确保 Cookie Sniffer 扩展已安装并启用', 'info');
+        });
+    </script>
+</body>
+</html>

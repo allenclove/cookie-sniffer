@@ -2,11 +2,11 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>导入功能测试</title>
+    <title>Cookie Sniffer 功能测试</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
+            max-width: 800px;
             margin: 50px auto;
             padding: 20px;
         }
@@ -53,10 +53,36 @@
             color: #856404;
             border: 1px solid #ffeaa7;
         }
+        .feature-list {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .feature-list h4 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
-    <h1>🍪 Cookie Sniffer 导入功能测试</h1>
+    <h1>🍪 Cookie Sniffer 功能测试</h1>
+    
+    <div class="feature-list">
+        <h4>🎉 新增功能</h4>
+        <ul>
+            <li><strong>实时输入记忆</strong>: 设置界面填写的内容会实时保存，重新打开后自动恢复</li>
+            <li><strong>快捷规则按钮</strong>: 在主页面上显示有URL的规则快捷按钮，点击直接打开对应网页</li>
+            <li><strong>改进的导入功能</strong>: 修复了消息端口关闭问题，添加了超时机制</li>
+        </ul>
+    </div>
     
     <div class="test-section">
         <h3>测试JSON数据</h3>
@@ -67,16 +93,22 @@
   "exportTime": "2024-01-01T12:00:00.000Z",
   "rules": [
     {
-      "key": "test-api",
-      "value": "/api/",
+      "key": "百度搜索",
+      "value": "baidu.com",
       "type": "关键词",
-      "url": "https://example.com/api/"
+      "url": "https://www.baidu.com"
     },
     {
-      "key": "test-login",
-      "value": "login",
+      "key": "GitHub",
+      "value": "github.com",
       "type": "关键词",
-      "url": "https://example.com/login"
+      "url": "https://github.com"
+    },
+    {
+      "key": "Google",
+      "value": "google.com",
+      "type": "关键词",
+      "url": "https://www.google.com"
     }
   ]
 }
@@ -85,26 +117,45 @@
     </div>
 
     <div class="test-section">
-        <h3>测试步骤</h3>
+        <h3>功能测试步骤</h3>
         <ol>
-            <li>打开Cookie Sniffer扩展</li>
-            <li>点击设置按钮(⚙️)</li>
-            <li>点击"导入规则"按钮</li>
-            <li>选择文件或粘贴JSON内容</li>
-            <li>点击"确认导入"按钮</li>
-            <li>检查控制台输出</li>
+            <li><strong>实时输入记忆测试</strong>:
+                <ul>
+                    <li>打开Cookie Sniffer扩展</li>
+                    <li>点击设置按钮(⚙️)</li>
+                    <li>在规则输入框中填写内容（不要点击添加）</li>
+                    <li>关闭设置弹窗，重新打开</li>
+                    <li>检查输入内容是否已保存</li>
+                </ul>
+            </li>
+            <li><strong>快捷规则按钮测试</strong>:
+                <ul>
+                    <li>导入包含URL的规则（使用上面的测试数据）</li>
+                    <li>检查主页面是否显示快捷按钮</li>
+                    <li>点击快捷按钮，检查是否能打开对应网页</li>
+                </ul>
+            </li>
+            <li><strong>导入功能测试</strong>:
+                <ul>
+                    <li>点击"导入规则"按钮</li>
+                    <li>选择文件或粘贴JSON内容</li>
+                    <li>点击"确认导入"按钮</li>
+                    <li>检查是否成功导入并显示快捷按钮</li>
+                </ul>
+            </li>
         </ol>
     </div>
 
     <div class="test-section">
         <h3>故障排除</h3>
         <ul>
-            <li>确保扩展已正确安装</li>
+            <li>确保扩展已正确安装并重新加载</li>
             <li>检查浏览器控制台是否有错误信息</li>
             <li>确认JSON格式正确</li>
             <li>检查按钮是否可以被点击</li>
             <li>查看background script的日志输出</li>
             <li>检查消息端口是否正常连接</li>
+            <li>验证快捷按钮是否正确显示有URL的规则</li>
         </ul>
     </div>
 
@@ -113,6 +164,7 @@
         <div id="debugInfo" class="result"></div>
         <button class="test-button" onclick="checkExtension()">检查扩展状态</button>
         <button class="test-button" onclick="testImport()">测试导入功能</button>
+        <button class="test-button" onclick="testQuickButtons()">测试快捷按钮</button>
         <button class="test-button" onclick="clearDebug()">清空调试信息</button>
     </div>
 
@@ -130,17 +182,20 @@
             const debugInfo = document.getElementById('debugInfo');
             debugInfo.textContent = '检查扩展状态...\n';
             
-            // 检查扩展是否安装
             if (typeof chrome !== 'undefined' && chrome.runtime) {
                 debugInfo.textContent += '✅ Chrome扩展API可用\n';
                 
-                // 尝试发送消息到扩展
                 try {
                     chrome.runtime.sendMessage({ type: "getMatchRules" }, function(response) {
                         if (chrome.runtime.lastError) {
                             debugInfo.textContent += `❌ 扩展通信错误: ${chrome.runtime.lastError.message}\n`;
                         } else if (response) {
+                            const rulesWithUrl = response.rules ? response.rules.filter(rule => rule.url && rule.url.trim() !== "") : [];
                             debugInfo.textContent += `✅ 扩展响应正常，当前规则数量: ${response.rules ? response.rules.length : 0}\n`;
+                            debugInfo.textContent += `✅ 有URL的规则数量: ${rulesWithUrl.length}\n`;
+                            if (rulesWithUrl.length > 0) {
+                                debugInfo.textContent += `✅ 快捷按钮应该显示: ${rulesWithUrl.map(r => r.key).join(', ')}\n`;
+                            }
                         } else {
                             debugInfo.textContent += '❌ 扩展没有响应\n';
                         }
@@ -160,10 +215,16 @@
                 exportTime: new Date().toISOString(),
                 rules: [
                     {
-                        key: "test-import",
-                        value: "/test/",
+                        key: "测试规则1",
+                        value: "/test1/",
                         type: "关键词",
-                        url: "https://test.example.com"
+                        url: "https://example1.com"
+                    },
+                    {
+                        key: "测试规则2",
+                        value: "/test2/",
+                        type: "关键词",
+                        url: "https://example2.com"
                     }
                 ]
             };
@@ -171,7 +232,6 @@
             debugInfo.textContent += '\n开始测试导入功能...\n';
             debugInfo.textContent += `测试数据: ${JSON.stringify(testData, null, 2)}\n`;
 
-            // 设置超时
             const timeout = setTimeout(() => {
                 debugInfo.textContent += '❌ 测试导入超时\n';
             }, 10000);
@@ -186,8 +246,33 @@
                     debugInfo.textContent += `❌ 导入测试失败: ${chrome.runtime.lastError.message}\n`;
                 } else if (response) {
                     debugInfo.textContent += `✅ 导入测试成功: ${JSON.stringify(response)}\n`;
+                    debugInfo.textContent += `✅ 导入后应该显示2个快捷按钮\n`;
                 } else {
                     debugInfo.textContent += '❌ 导入测试没有响应\n';
+                }
+            });
+        }
+
+        function testQuickButtons() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.textContent += '\n测试快捷按钮功能...\n';
+            
+            chrome.runtime.sendMessage({ type: "getMatchRules" }, function(response) {
+                if (response && response.rules) {
+                    const rulesWithUrl = response.rules.filter(rule => rule.url && rule.url.trim() !== "");
+                    debugInfo.textContent += `当前有URL的规则: ${rulesWithUrl.length} 个\n`;
+                    
+                    if (rulesWithUrl.length > 0) {
+                        debugInfo.textContent += `快捷按钮应该显示:\n`;
+                        rulesWithUrl.forEach(rule => {
+                            debugInfo.textContent += `  - ${rule.key} -> ${rule.url}\n`;
+                        });
+                        debugInfo.textContent += `\n点击快捷按钮应该能打开对应网页\n`;
+                    } else {
+                        debugInfo.textContent += `没有有URL的规则，不会显示快捷按钮\n`;
+                    }
+                } else {
+                    debugInfo.textContent += `❌ 无法获取规则信息\n`;
                 }
             });
         }

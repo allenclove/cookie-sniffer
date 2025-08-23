@@ -189,6 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
 function initializeSettings() {
   // 默认启用输入记忆和自动保存
   restoreLastInputs();
+  setupRealTimeSave(); // 调用实时保存函数
 }
 
 // 恢复上次输入
@@ -214,6 +215,51 @@ function saveCurrentInputs() {
   };
   
   chrome.storage.local.set({ lastInputs: inputs });
+}
+
+// 实时保存输入内容
+function setupRealTimeSave() {
+  const keyInput = document.getElementById("ruleKeyInput");
+  const valueInput = document.getElementById("ruleValueInput");
+  const typeSelect = document.getElementById("ruleTypeSelect");
+  const urlInput = document.getElementById("ruleUrlInput");
+  
+  // 为所有输入框添加实时保存
+  [keyInput, valueInput, typeSelect, urlInput].forEach(input => {
+    input.addEventListener("input", saveCurrentInputs);
+    input.addEventListener("change", saveCurrentInputs);
+  });
+}
+
+// 显示规则快捷按钮
+function displayQuickRuleButtons(rules) {
+  const quickButtonsContainer = document.getElementById("quickRuleButtons");
+  if (!quickButtonsContainer) return;
+  
+  // 过滤出有URL的规则
+  const rulesWithUrl = rules.filter(rule => rule.url && rule.url.trim() !== "");
+  
+  if (rulesWithUrl.length === 0) {
+    quickButtonsContainer.innerHTML = '<div class="no-quick-rules">暂无快捷规则</div>';
+    return;
+  }
+  
+  quickButtonsContainer.innerHTML = rulesWithUrl.map(rule => `
+    <button class="quick-rule-btn" data-url="${rule.url}" title="${rule.url}">
+      ${rule.key}
+    </button>
+  `).join('');
+  
+  // 为快捷按钮添加点击事件
+  document.querySelectorAll('.quick-rule-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const url = this.getAttribute('data-url');
+      if (url) {
+        chrome.tabs.create({ url: url });
+        showNotification(`✅ 已打开: ${this.textContent}`);
+      }
+    });
+  });
 }
 
 // 清空规则输入框
@@ -308,7 +354,7 @@ function importRules(jsonText) {
         document.getElementById("importModal").style.display = "none";
         document.getElementById("importTextarea").value = "";
         document.getElementById("importFile").value = "";
-        loadMatchRules();
+        loadMatchRules(); // 这会同时更新规则列表和快捷按钮
         showNotification(`✅ 成功导入 ${validRules.length} 条规则`);
       } else {
         showNotification("❌ 导入失败: " + (response.error || "未知错误"));
@@ -405,6 +451,7 @@ function loadMatchRules() {
   chrome.runtime.sendMessage({ type: "getMatchRules" }, function (response) {
     if (response.rules) {
       displayMatchRules(response.rules);
+      displayQuickRuleButtons(response.rules); // 显示快捷按钮
     }
   });
 }
@@ -518,7 +565,7 @@ function updateMatchRule(oldKey, newRule) {
     newRule: newRule 
   }, function (response) {
     if (response.success) {
-      loadMatchRules();
+      loadMatchRules(); // 这会同时更新规则列表和快捷按钮
       showNotification("✅ 规则已更新");
     } else {
       showNotification("❌ 规则更新失败");
@@ -640,7 +687,7 @@ function addMatchRule(rule) {
     console.log("收到添加规则响应:", response);
     
     if (response.success) {
-      loadMatchRules();
+      loadMatchRules(); // 这会同时更新规则列表和快捷按钮
       showNotification("✅ 匹配规则已添加");
     } else {
       showNotification("❌ 规则名称已存在");
@@ -680,7 +727,7 @@ function removeMatchRule(key) {
       console.log("收到删除规则响应:", response);
       
       if (response.success) {
-        loadMatchRules();
+        loadMatchRules(); // 这会同时更新规则列表和快捷按钮
         showNotification("🗑️ 规则已删除");
       } else {
         showNotification("❌ 删除规则失败");

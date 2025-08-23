@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "exportTime": "2024-01-01T12:00:00.000Z",
+  "rules": [
+    {
+      "key": "test-api",
+      "value": "/api/",
+      "type": "关键词",
+      "url": "https://example.com/api/"
+    },
+    {
+      "key": "test-login",
+      "value": "login",
+      "type": "关键词",
+      "url": "https://example.com/login"
+    },
+    {
+      "key": "test-exact",
+      "value": "https://exact-match.example.com",
+      "type": "全匹配",
+      "url": "https://exact-match.example.com"
+    },
+    {
+      "key": "test-regex",
+      "value": "/user/\\d+",
+      "type": "正则",
+      "url": "https://example.com/user/"
+    }
+  ]
+}

@@ -1,8 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // 初始化设置
+  initializeSettings();
+  
   // 获取Cookie和历史记录
   chrome.runtime.sendMessage({ type: "getCookie" }, function (response) {
     const textarea = document.getElementById("cookieText");
     const sourceDiv = document.getElementById("cookieSource");
+    const timeDiv = document.getElementById("cookieTime");
     
     if (response.cookie && response.cookie !== "未捕获到 Cookie") {
       textarea.value = response.cookie;
@@ -11,11 +15,26 @@ document.addEventListener("DOMContentLoaded", function () {
         const latest = response.history[0];
         sourceDiv.textContent = `来源: ${latest.url} (匹配规则: ${latest.matchKey} [${latest.matchType}])`;
         sourceDiv.className = "cookie-source active";
+        timeDiv.textContent = `捕获时间: ${latest.timestamp}`;
+        
+        // 为Cookie来源URL添加点击展开功能
+        sourceDiv.addEventListener("click", function() {
+          if (this.classList.contains('expanded')) {
+            // 如果已经展开，则收起
+            this.textContent = `来源: ${latest.url} (匹配规则: ${latest.matchKey} [${latest.matchType}])`;
+            this.classList.remove('expanded');
+          } else {
+            // 如果未展开，则展开显示完整URL
+            this.textContent = `来源: ${latest.url}\n(匹配规则: ${latest.matchKey} [${latest.matchType}])`;
+            this.classList.add('expanded');
+          }
+        });
       }
     } else {
       textarea.value = "未捕获到 Cookie";
       sourceDiv.textContent = "等待捕获 Cookie...";
       sourceDiv.className = "cookie-source";
+      timeDiv.textContent = "";
     }
     
     // 显示历史记录
@@ -43,9 +62,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (response.success) {
           const textarea = document.getElementById("cookieText");
           const sourceDiv = document.getElementById("cookieSource");
+          const timeDiv = document.getElementById("cookieTime");
           textarea.value = "未捕获到 Cookie";
           sourceDiv.textContent = "等待捕获 Cookie...";
           sourceDiv.className = "cookie-source";
+          timeDiv.textContent = "";
           displayHistory([]);
           showNotification("🗑️ 所有数据已清空");
         }
@@ -65,10 +86,240 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // 设置按钮
+  document.getElementById("settingsBtn").addEventListener("click", function () {
+    document.getElementById("settingsModal").style.display = "block";
+  });
+
+  // 关闭设置弹框
+  document.getElementById("closeSettingsBtn").addEventListener("click", function () {
+    document.getElementById("settingsModal").style.display = "none";
+  });
+
+  // 点击弹框外部关闭
+  window.addEventListener("click", function (event) {
+    const settingsModal = document.getElementById("settingsModal");
+    const importModal = document.getElementById("importModal");
+    if (event.target === settingsModal) {
+      settingsModal.style.display = "none";
+    }
+    if (event.target === importModal) {
+      importModal.style.display = "none";
+    }
+  });
+
+  // 导出规则按钮
+  document.getElementById("exportRulesBtn").addEventListener("click", function () {
+    exportRules();
+  });
+
+  // 导入规则按钮
+  document.getElementById("importRulesBtn").addEventListener("click", function () {
+    console.log("导入规则按钮被点击");
+    document.getElementById("importModal").style.display = "block";
+  });
+
+  // 关闭导入弹框
+  document.getElementById("closeImportBtn").addEventListener("click", function () {
+    console.log("关闭导入弹框按钮被点击");
+    document.getElementById("importModal").style.display = "none";
+  });
+
+  // 取消导入
+  document.getElementById("cancelImportBtn").addEventListener("click", function () {
+    console.log("取消导入按钮被点击");
+    document.getElementById("importModal").style.display = "none";
+  });
+
+  // 确认导入
+  document.getElementById("confirmImportBtn").addEventListener("click", function () {
+    console.log("确认导入按钮被点击");
+    const importFile = document.getElementById("importFile");
+    const importText = document.getElementById("importTextarea").value.trim();
+    
+    console.log("文件数量:", importFile.files.length);
+    console.log("文本内容:", importText);
+    
+    if (importFile.files.length > 0) {
+      // 从文件导入
+      const file = importFile.files[0];
+      console.log("选择的文件:", file.name);
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const jsonText = e.target.result;
+          console.log("文件内容:", jsonText);
+          importRules(jsonText);
+        } catch (error) {
+          console.error("文件读取错误:", error);
+          showNotification("❌ 文件读取失败: " + error.message);
+        }
+      };
+      reader.readAsText(file);
+    } else if (importText) {
+      // 从文本导入
+      console.log("从文本导入:", importText);
+      importRules(importText);
+    } else {
+      console.log("没有选择文件或输入文本");
+      showNotification("⚠️ 请选择文件或输入JSON内容");
+    }
+  });
+
+  // 测试按钮点击
+  setTimeout(() => {
+    const confirmBtn = document.getElementById("confirmImportBtn");
+    if (confirmBtn) {
+      console.log("确认导入按钮存在:", confirmBtn);
+      console.log("按钮样式:", window.getComputedStyle(confirmBtn));
+    } else {
+      console.log("确认导入按钮不存在");
+    }
+  }, 1000);
+
   // 匹配规则管理
   loadMatchRules();
   setupRuleManagement();
+  
+  // 确保所有事件监听器都已绑定
+  console.log("所有事件监听器已绑定");
 });
+
+// 初始化设置
+function initializeSettings() {
+  // 默认启用输入记忆和自动保存
+  restoreLastInputs();
+}
+
+// 恢复上次输入
+function restoreLastInputs() {
+  chrome.storage.local.get(['lastInputs'], function(result) {
+    if (result.lastInputs) {
+      const inputs = result.lastInputs;
+      if (inputs.ruleKey) document.getElementById("ruleKeyInput").value = inputs.ruleKey;
+      if (inputs.ruleValue) document.getElementById("ruleValueInput").value = inputs.ruleValue;
+      if (inputs.ruleType) document.getElementById("ruleTypeSelect").value = inputs.ruleType;
+      if (inputs.ruleUrl) document.getElementById("ruleUrlInput").value = inputs.ruleUrl;
+    }
+  });
+}
+
+// 保存当前输入
+function saveCurrentInputs() {
+  const inputs = {
+    ruleKey: document.getElementById("ruleKeyInput").value,
+    ruleValue: document.getElementById("ruleValueInput").value,
+    ruleType: document.getElementById("ruleTypeSelect").value,
+    ruleUrl: document.getElementById("ruleUrlInput").value
+  };
+  
+  chrome.storage.local.set({ lastInputs: inputs });
+}
+
+// 清空规则输入框
+function clearRuleInputs() {
+  document.getElementById("ruleKeyInput").value = "";
+  document.getElementById("ruleValueInput").value = "";
+  document.getElementById("ruleUrlInput").value = "";
+  // 不清空类型选择，保持默认值
+}
+
+// 导出规则
+function exportRules() {
+  chrome.runtime.sendMessage({ type: "getMatchRules" }, function (response) {
+    if (response.rules && response.rules.length > 0) {
+      const exportData = {
+        version: "1.0",
+        exportTime: new Date().toISOString(),
+        rules: response.rules
+      };
+      
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      
+      // 创建下载链接
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cookie-sniffer-rules-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showNotification("✅ 规则已导出");
+    } else {
+      showNotification("⚠️ 没有规则可导出");
+    }
+  });
+}
+
+// 导入规则
+function importRules(jsonText) {
+  try {
+    const importData = JSON.parse(jsonText);
+    
+    if (!importData.rules || !Array.isArray(importData.rules)) {
+      showNotification("❌ 无效的规则格式");
+      return;
+    }
+    
+    // 验证规则格式
+    const validRules = importData.rules.filter(rule => 
+      rule.key && rule.value && rule.type
+    );
+    
+    if (validRules.length === 0) {
+      showNotification("❌ 没有有效的规则");
+      return;
+    }
+    
+    console.log("开始导入规则，规则数量:", validRules.length);
+    
+    // 设置超时
+    const timeout = setTimeout(() => {
+      console.error("导入规则超时");
+      showNotification("❌ 导入超时，请重试");
+    }, 10000); // 10秒超时
+    
+    chrome.runtime.sendMessage({ 
+      type: "importRules", 
+      rules: validRules 
+    }, function (response) {
+      clearTimeout(timeout);
+      
+      // 检查是否有错误
+      if (chrome.runtime.lastError) {
+        console.error("Chrome runtime error:", chrome.runtime.lastError);
+        showNotification("❌ 导入失败: " + chrome.runtime.lastError.message);
+        return;
+      }
+      
+      // 检查响应是否存在
+      if (!response) {
+        console.error("No response received from background script");
+        showNotification("❌ 导入失败: 没有收到响应");
+        return;
+      }
+      
+      console.log("收到导入响应:", response);
+      
+      if (response.success) {
+        document.getElementById("importModal").style.display = "none";
+        document.getElementById("importTextarea").value = "";
+        document.getElementById("importFile").value = "";
+        loadMatchRules();
+        showNotification(`✅ 成功导入 ${validRules.length} 条规则`);
+      } else {
+        showNotification("❌ 导入失败: " + (response.error || "未知错误"));
+      }
+    });
+    
+  } catch (error) {
+    console.error("Import rules error:", error);
+    showNotification("❌ JSON格式错误: " + error.message);
+  }
+}
 
 // 显示历史记录
 function displayHistory(history) {
@@ -314,9 +565,10 @@ function setupRuleManagement() {
     
     if (key && value) {
       addMatchRule({ key, value, type, url });
-      keyInput.value = "";
-      valueInput.value = "";
-      urlInput.value = "";
+      // 清空输入框
+      clearRuleInputs();
+      // 保存当前输入（默认启用输入记忆）
+      saveCurrentInputs();
     } else {
       showNotification("⚠️ 请填写规则名称和匹配值");
     }
@@ -333,9 +585,10 @@ function setupRuleManagement() {
         
         if (key && value) {
           addMatchRule({ key, value, type, url });
-          keyInput.value = "";
-          valueInput.value = "";
-          urlInput.value = "";
+          // 清空输入框
+          clearRuleInputs();
+          // 保存当前输入（默认启用输入记忆）
+          saveCurrentInputs();
         }
       }
     });
@@ -358,10 +611,34 @@ function setupRuleManagement() {
 
 // 添加匹配规则
 function addMatchRule(rule) {
+  console.log("开始添加规则:", rule);
+  
+  // 设置超时
+  const timeout = setTimeout(() => {
+    console.error("添加规则超时");
+    showNotification("❌ 添加规则超时，请重试");
+  }, 5000); // 5秒超时
+  
   chrome.runtime.sendMessage({ 
     type: "addMatchRule", 
     rule: rule 
   }, function (response) {
+    clearTimeout(timeout);
+    
+    if (chrome.runtime.lastError) {
+      console.error("Chrome runtime error:", chrome.runtime.lastError);
+      showNotification("❌ 添加规则失败: " + chrome.runtime.lastError.message);
+      return;
+    }
+    
+    if (!response) {
+      console.error("No response received from background script");
+      showNotification("❌ 添加规则失败: 没有收到响应");
+      return;
+    }
+    
+    console.log("收到添加规则响应:", response);
+    
     if (response.success) {
       loadMatchRules();
       showNotification("✅ 匹配规则已添加");
@@ -374,13 +651,39 @@ function addMatchRule(rule) {
 // 删除匹配规则
 function removeMatchRule(key) {
   if (confirm(`确定要删除规则 "${key}" 吗？`)) {
+    console.log("开始删除规则:", key);
+    
+    // 设置超时
+    const timeout = setTimeout(() => {
+      console.error("删除规则超时");
+      showNotification("❌ 删除规则超时，请重试");
+    }, 5000); // 5秒超时
+    
     chrome.runtime.sendMessage({ 
       type: "removeMatchRule", 
       key: key 
     }, function (response) {
+      clearTimeout(timeout);
+      
+      if (chrome.runtime.lastError) {
+        console.error("Chrome runtime error:", chrome.runtime.lastError);
+        showNotification("❌ 删除规则失败: " + chrome.runtime.lastError.message);
+        return;
+      }
+      
+      if (!response) {
+        console.error("No response received from background script");
+        showNotification("❌ 删除规则失败: 没有收到响应");
+        return;
+      }
+      
+      console.log("收到删除规则响应:", response);
+      
       if (response.success) {
         loadMatchRules();
         showNotification("🗑️ 规则已删除");
+      } else {
+        showNotification("❌ 删除规则失败");
       }
     });
   }

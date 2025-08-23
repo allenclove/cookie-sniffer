@@ -8,6 +8,7 @@
   <body>
     <div class="header">
       <h1>🍪 Cookie 提取器</h1>
+      <button id="settingsBtn" class="settings-btn" title="设置">⚙️</button>
     </div>
     
     <div class="content">
@@ -15,6 +16,7 @@
         <label for="cookieText">最新捕获的 Cookie:</label>
         <div class="cookie-info">
           <div class="cookie-source" id="cookieSource">等待捕获 Cookie...</div>
+          <div class="cookie-time" id="cookieTime"></div>
           <textarea id="cookieText" readonly placeholder="等待捕获 Cookie..."></textarea>
         </div>
         <div class="button-group">
@@ -24,29 +26,71 @@
       </div>
       
       <div class="section">
-        <label>自定义匹配规则:</label>
-        <div class="rule-input-container">
-          <div class="rule-row">
-            <input type="text" id="ruleKeyInput" placeholder="规则名称" title="给规则起一个便于识别的名称，如: baidu" />
-            <input type="text" id="ruleValueInput" placeholder="匹配值" title="要匹配的URL内容，如: https://baidu.com 或 /api/" />
-            <select id="ruleTypeSelect" title="选择匹配类型">
-              <option value="关键词">关键词</option>
-              <option value="全匹配">全匹配</option>
-              <option value="正则">正则</option>
-            </select>
-            <input type="text" id="ruleUrlInput" placeholder="页面URL" title="可选，用于一键打开相关页面" />
-            <button id="addRuleBtn" class="add-btn" title="添加规则">+</button>
-          </div>
-        </div>
-        <div class="rules" id="rulesList">
-          <!-- 规则列表将在这里动态生成 -->
-        </div>
-      </div>
-      
-      <div class="section">
         <label>历史记录:</label>
         <button id="clearHistoryBtn" class="secondary-btn">清空</button>
         <div id="historyList" class="history-list"></div>
+      </div>
+    </div>
+
+    <!-- 设置弹框 -->
+    <div id="settingsModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⚙️ 设置</h3>
+          <button id="closeSettingsBtn" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-section">
+            <h4>自定义匹配规则:</h4>
+            <div class="rule-input-container">
+              <div class="rule-row">
+                <input type="text" id="ruleKeyInput" placeholder="规则名称" title="给规则起一个便于识别的名称，如: baidu" />
+                <input type="text" id="ruleValueInput" placeholder="匹配值" title="要匹配的URL内容，如: https://baidu.com 或 /api/" />
+                <select id="ruleTypeSelect" title="选择匹配类型">
+                  <option value="关键词">关键词</option>
+                  <option value="全匹配">全匹配</option>
+                  <option value="正则">正则</option>
+                </select>
+                <input type="text" id="ruleUrlInput" placeholder="页面URL" title="可选，用于一键打开相关页面" />
+                <button id="addRuleBtn" class="add-btn" title="添加规则">+</button>
+              </div>
+            </div>
+            <div class="rules" id="rulesList">
+              <!-- 规则列表将在这里动态生成 -->
+            </div>
+            <div class="rule-actions">
+              <button id="exportRulesBtn" class="action-btn">📤 导出规则</button>
+              <button id="importRulesBtn" class="action-btn">📥 导入规则</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 导入规则弹框 -->
+    <div id="importModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>📥 导入规则</h3>
+          <button id="closeImportBtn" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="import-options">
+            <div class="import-option">
+              <label for="importFile">选择文件:</label>
+              <input type="file" id="importFile" accept=".json" />
+            </div>
+            <div class="import-divider">或者</div>
+            <div class="import-option">
+              <label for="importTextarea">粘贴JSON内容:</label>
+              <textarea id="importTextarea" placeholder="请粘贴JSON格式的规则数据..."></textarea>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button id="confirmImportBtn" class="primary-btn">确认导入</button>
+            <button id="cancelImportBtn" class="secondary-btn">取消</button>
+          </div>
+        </div>
       </div>
     </div>
 

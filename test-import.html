@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>导入功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍪 Cookie Sniffer 导入功能测试</h1>
+    
+    <div class="test-section">
+        <h3>测试JSON数据</h3>
+        <p>使用以下JSON数据测试导入功能：</p>
+        <div class="result" id="testJson">
+{
+  "version": "1.0",
+  "exportTime": "2024-01-01T12:00:00.000Z",
+  "rules": [
+    {
+      "key": "test-api",
+      "value": "/api/",
+      "type": "关键词",
+      "url": "https://example.com/api/"
+    },
+    {
+      "key": "test-login",
+      "value": "login",
+      "type": "关键词",
+      "url": "https://example.com/login"
+    }
+  ]
+}
+        </div>
+        <button class="test-button" onclick="copyTestJson()">复制测试JSON</button>
+    </div>
+
+    <div class="test-section">
+        <h3>测试步骤</h3>
+        <ol>
+            <li>打开Cookie Sniffer扩展</li>
+            <li>点击设置按钮(⚙️)</li>
+            <li>点击"导入规则"按钮</li>
+            <li>选择文件或粘贴JSON内容</li>
+            <li>点击"确认导入"按钮</li>
+            <li>检查控制台输出</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>故障排除</h3>
+        <ul>
+            <li>确保扩展已正确安装</li>
+            <li>检查浏览器控制台是否有错误信息</li>
+            <li>确认JSON格式正确</li>
+            <li>检查按钮是否可以被点击</li>
+            <li>查看background script的日志输出</li>
+            <li>检查消息端口是否正常连接</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>调试信息</h3>
+        <div id="debugInfo" class="result"></div>
+        <button class="test-button" onclick="checkExtension()">检查扩展状态</button>
+        <button class="test-button" onclick="testImport()">测试导入功能</button>
+        <button class="test-button" onclick="clearDebug()">清空调试信息</button>
+    </div>
+
+    <script>
+        function copyTestJson() {
+            const testJson = document.getElementById('testJson').textContent;
+            navigator.clipboard.writeText(testJson).then(() => {
+                alert('测试JSON已复制到剪贴板！');
+            }).catch(() => {
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        function checkExtension() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.textContent = '检查扩展状态...\n';
+            
+            // 检查扩展是否安装
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                debugInfo.textContent += '✅ Chrome扩展API可用\n';
+                
+                // 尝试发送消息到扩展
+                try {
+                    chrome.runtime.sendMessage({ type: "getMatchRules" }, function(response) {
+                        if (chrome.runtime.lastError) {
+                            debugInfo.textContent += `❌ 扩展通信错误: ${chrome.runtime.lastError.message}\n`;
+                        } else if (response) {
+                            debugInfo.textContent += `✅ 扩展响应正常，当前规则数量: ${response.rules ? response.rules.length : 0}\n`;
+                        } else {
+                            debugInfo.textContent += '❌ 扩展没有响应\n';
+                        }
+                    });
+                } catch (error) {
+                    debugInfo.textContent += `❌ 发送消息失败: ${error.message}\n`;
+                }
+            } else {
+                debugInfo.textContent += '❌ Chrome扩展API不可用\n';
+            }
+        }
+
+        function testImport() {
+            const debugInfo = document.getElementById('debugInfo');
+            const testData = {
+                version: "1.0",
+                exportTime: new Date().toISOString(),
+                rules: [
+                    {
+                        key: "test-import",
+                        value: "/test/",
+                        type: "关键词",
+                        url: "https://test.example.com"
+                    }
+                ]
+            };
+
+            debugInfo.textContent += '\n开始测试导入功能...\n';
+            debugInfo.textContent += `测试数据: ${JSON.stringify(testData, null, 2)}\n`;
+
+            // 设置超时
+            const timeout = setTimeout(() => {
+                debugInfo.textContent += '❌ 测试导入超时\n';
+            }, 10000);
+
+            chrome.runtime.sendMessage({ 
+                type: "importRules", 
+                rules: testData.rules 
+            }, function(response) {
+                clearTimeout(timeout);
+                
+                if (chrome.runtime.lastError) {
+                    debugInfo.textContent += `❌ 导入测试失败: ${chrome.runtime.lastError.message}\n`;
+                } else if (response) {
+                    debugInfo.textContent += `✅ 导入测试成功: ${JSON.stringify(response)}\n`;
+                } else {
+                    debugInfo.textContent += '❌ 导入测试没有响应\n';
+                }
+            });
+        }
+
+        function clearDebug() {
+            document.getElementById('debugInfo').textContent = '';
+        }
+    </script>
+</body>
+</html>
